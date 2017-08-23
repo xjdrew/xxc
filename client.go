@@ -125,8 +125,8 @@ func (c *Client) loginWithLocked() error {
 		return err
 	}
 
-	profile, err := parseUserProfile(resp.Data)
-	if err != nil {
+	profile := &UserProfile{}
+	if err := resp.ConvertDataTo(profile); err != nil {
 		return err
 	}
 
