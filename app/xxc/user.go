@@ -44,7 +44,7 @@ func (u *User) updateGroups(groups []*xxc.ChatGroup) {
 
 	for _, group := range groups {
 		u.groups[group.Gid] = group
-		log.Print("group:", group.Gid, group.Name, group.Type)
+		log.Printf("group: gid:%s name:%s type:%s", group.Gid, group.Name, group.Type)
 	}
 }
 
