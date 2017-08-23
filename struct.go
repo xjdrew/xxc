@@ -99,7 +99,7 @@ type ChatGroup struct {
 	CreatedDate    int64       // 创建时间
 	EditedBy       string      // 编辑者用户名
 	EditedDate     interface{} // 编辑时间 ----------------  这个字段服务器有bug，有值时是整数，但默认值居然是空字符串
-	LastActiveTime int64       // 会话最后一次发送消息的时间
+	LastActiveTime interface{} // 会话最后一次发送消息的时间 ----------------  这个字段服务器有bug，有值时是整数，但默认值居然是空字符串
 	Star           int         // 当前登录用户是否收藏此会话
 	Hide           int         // 当前登录用户是否隐藏此会话
 	Mute           int         //
