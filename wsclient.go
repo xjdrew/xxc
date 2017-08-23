@@ -30,6 +30,10 @@ func (ss *sessions) get(name string) *call {
 func (ss *sessions) set(name string, c *call) bool {
 	ss.Lock()
 	defer ss.Unlock()
+	if ss.m == nil {
+		ss.m = make(map[string]*call)
+	}
+
 	if _, ok := ss.m[name]; ok {
 		return false
 	}
@@ -43,6 +47,17 @@ func (ss *sessions) delete(name string) {
 	delete(ss.m, name)
 }
 
+func (ss *sessions) clearAll() []*call {
+	var m []*call
+	ss.Lock()
+	defer ss.Unlock()
+	for _, v := range ss.m {
+		m = append(m, v)
+	}
+	ss.m = nil
+	return m
+}
+
 type wsClient struct {
 	conn  *websocket.Conn
 	token []byte
@@ -50,7 +65,8 @@ type wsClient struct {
 	rdMutex sync.Mutex
 	wrMutex sync.Mutex
 
-	ss *sessions
+	ss      *sessions
+	handler Handler
 }
 
 func (ws *wsClient) readMessage() (*Response, error) {
@@ -83,23 +99,40 @@ func (ws *wsClient) writeMessage(req *Request) error {
 	return err
 }
 
+func (ws *wsClient) wakeupAll(err error) {
+	ss := ws.ss.clearAll()
+	for _, call := range ss {
+		call.err = err
+		select {
+		case call.done <- call:
+		default:
+		}
+	}
+}
+
 func (ws *wsClient) handleMessage() {
 	for {
 		resp, err := ws.readMessage()
 		if err != nil {
 			log.Printf("read message failed: %s", err)
+			ws.wakeupAll(err)
 			return
 		}
 		name := resp.MethodName()
 		call := ws.ss.get(name)
-		if call == nil {
-			log.Printf("unknown message: %s", name)
-			continue
+		if call != nil {
+			call.resp = resp
+			call.done <- call
+		} else {
+			ws.handler.ServeXX(resp)
 		}
-		call.resp = resp
-		call.done <- call
 	}
 }
+
+func (ws *wsClient) Send(req *Request) error {
+	return ws.writeMessage(req)
+}
+
 func (ws *wsClient) Call(req *Request) (*Response, error) {
 	name := req.MethodName()
 	c := &call{
@@ -116,6 +149,7 @@ func (ws *wsClient) Call(req *Request) (*Response, error) {
 	}
 
 	<-c.done
+
 	if c.err != nil {
 		return nil, c.err
 	}
@@ -126,7 +160,7 @@ func (ws *wsClient) Call(req *Request) (*Response, error) {
 	return c.resp, nil
 }
 
-func createWsClient(httpUrl string, port int, token []byte) (*wsClient, error) {
+func createWsClient(httpUrl string, port int, token []byte, handler Handler) (*wsClient, error) {
 	o, err := url.Parse(httpUrl)
 	if err != nil {
 		return nil, err
@@ -146,9 +180,10 @@ func createWsClient(httpUrl string, port int, token []byte) (*wsClient, error) {
 	}
 
 	ws := &wsClient{
-		conn:  conn,
-		token: token,
-		ss:    &sessions{m: make(map[string]*call)},
+		conn:    conn,
+		token:   token,
+		ss:      &sessions{},
+		handler: handler,
 	}
 
 	go ws.handleMessage()

@@ -3,9 +3,14 @@ package main
 import (
 	"flag"
 	"log"
+	"time"
 
 	"github.com/xjdrew/xxc"
 )
+
+func init() {
+	log.SetFlags(log.Flags() | log.Lshortfile)
+}
 
 func main() {
 	config := &xxc.ClientConfig{}
@@ -21,4 +26,7 @@ func main() {
 		log.Fatalln(err)
 	}
 	log.Println("login succeed")
+	err := c.Logout()
+	log.Println(err)
+	time.Sleep(100000 * time.Second)
 }

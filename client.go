@@ -33,12 +33,21 @@ type Client struct {
 	initErr   error
 
 	loginMutex sync.Mutex
-	logined    bool
 	loginErr   error
+	user       *UserProfile
+
+	Mux *ClientMux
+}
+
+func (c *Client) getMux() *ClientMux {
+	if c.Mux == nil {
+		return DefaultClientMux
+	}
+	return c.Mux
 }
 
 func (c *Client) initWsClient() error {
-	ws, err := createWsClient(c.clientConfig.Host, c.serverConfig.ChatPort, []byte(c.serverConfig.Token))
+	ws, err := createWsClient(c.clientConfig.Host, c.serverConfig.ChatPort, []byte(c.serverConfig.Token), c.getMux())
 	if err != nil {
 		return err
 	}
@@ -95,9 +104,6 @@ func (c *Client) init() error {
 }
 
 func (c *Client) loginWithLocked() error {
-	if Verbose {
-		log.Printf("login start")
-	}
 	if err := c.initWsClient(); err != nil {
 		c.loginErr = err
 		return err
@@ -114,14 +120,20 @@ func (c *Client) loginWithLocked() error {
 		},
 	}
 
-	resp, err := c.wsClient.Call(loginReq)
+	resp, err := c.Call(loginReq)
 	if err != nil {
 		return err
 	}
 
+	profile, err := parseUserProfile(resp.Data)
+	if err != nil {
+		return err
+	}
+
+	c.user = profile
+
 	if Verbose {
-		log.Printf("login response: %s", resp)
-		log.Printf("login start")
+		log.Printf("user profile: %+v", c.user)
 	}
 	return nil
 }
@@ -134,7 +146,7 @@ func (c *Client) Login() error {
 	c.loginMutex.Lock()
 	defer c.loginMutex.Unlock()
 
-	if c.logined {
+	if c.user != nil {
 		return nil
 	}
 
@@ -146,12 +158,61 @@ func (c *Client) Login() error {
 		c.loginErr = err
 		return err
 	}
-	c.logined = true
 	return nil
 }
 
 func (c *Client) Logout() error {
+	c.loginMutex.Lock()
+	defer c.loginMutex.Unlock()
+	if c.user == nil {
+		return nil
+	}
+
+	logoutReq := &Request{
+		UserID: c.user.Id,
+		Module: "chat",
+		Method: "logout",
+	}
+
+	_, err := c.Call(logoutReq)
+	if err != nil {
+		log.Printf("logout failed: %s", err)
+		return err
+	}
+	c.user = nil
 	return nil
+}
+
+func (c *Client) GetUser() (*UserProfile, error) {
+	err := c.Login()
+	if err != nil {
+		return nil, err
+	}
+	return c.user, nil
+}
+
+func (c *Client) Call(req *Request) (*Response, error) {
+	if Verbose {
+		log.Printf("+ call %s", req.MethodName())
+	}
+	resp, err := c.wsClient.Call(req)
+
+	if Verbose {
+		if err != nil {
+			log.Printf("- call return %s: %s", req.MethodName(), err)
+		} else {
+			log.Printf("- call return %s: %s", req.MethodName(), resp)
+		}
+	}
+	return resp, err
+}
+
+func (c *Client) Send(req *Request) error {
+	if Verbose {
+		log.Printf("* send %s", req.MethodName())
+	}
+	err := c.wsClient.Send(req)
+	return err
 }
 
 func NewClient(config *ClientConfig) *Client {
