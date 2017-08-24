@@ -129,7 +129,7 @@ func (u *User) OnChatMessage(resp *xxc.Response) {
 		return
 	}
 
-	log.Print("OnChatMessage")
+	log.Printf("OnChatMessage: <%s,%s>", resp.Result, resp.Message)
 	for _, m := range messages {
 		log.Printf("\tg:%s, u:%d, d:%d, t:%s, ct:%s, c:%s", m.Cgid, m.User, m.Date, m.Type, m.ContentType, m.Content)
 	}
@@ -176,9 +176,11 @@ func (u *User) say(gid string, content string) error {
 }
 
 func (u *User) SayToGroup(gid string, content string) error {
-	if u.GetGroup(gid) == nil {
-		return fmt.Errorf("%s is not a valid group id", gid)
-	}
+	/*
+		if u.GetGroup(gid) == nil {
+			return fmt.Errorf("%s is not a valid group id", gid)
+		}
+	*/
 	return u.say(gid, content)
 }
 
