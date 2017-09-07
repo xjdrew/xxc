@@ -17,7 +17,7 @@ func main() {
 
 	var account, groupid, message string
 
-	flag.StringVar(&config.Host, "host", "https://im2.ejoy:11443", "http service")
+	flag.StringVar(&config.Host, "host", "https://im.ejoy:11443", "http service")
 	flag.StringVar(&config.User, "user", "bot", "user name")
 	flag.StringVar(&config.Password, "password", "bot", "password")
 	flag.BoolVar(&xxc.Verbose, "verbose", false, "print debug information")
@@ -28,11 +28,11 @@ func main() {
 	flag.Parse()
 
 	client := xxc.NewClient(config)
-	user, err := CreateUser(client)
+	user, err := xxc.CreateUser(client)
 	if err != nil {
 		log.Fatalf("create user failed: %s", err)
 	}
-	defer user.Fini()
+	// defer user.Fini()
 
 	log.Printf("login as user: %s", user.GetProfile().Account)
 

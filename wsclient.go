@@ -67,6 +67,9 @@ type wsClient struct {
 
 	ss      *sessions
 	handler Handler
+
+	// 读取信息失败时回调
+	OnHandleError func(error)
 }
 
 func (ws *wsClient) readMessage() (*Response, error) {
@@ -116,6 +119,9 @@ func (ws *wsClient) handleMessage() {
 		if err != nil {
 			log.Printf("read message failed: %s", err)
 			ws.wakeupAll(err)
+			if ws.OnHandleError != nil {
+				go ws.OnHandleError(err)
+			}
 			return
 		}
 		name := resp.MethodName()

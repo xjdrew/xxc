@@ -30,8 +30,8 @@ func (mux *ClientMux) Handle(methodName string, handler Handler) {
 		mux.m = make(map[string]Handler)
 	}
 
-	if _, ok := mux.m[methodName]; ok {
-		panic("mux: multiple registrations for " + methodName)
+	if Verbose {
+		log.Printf("register handler: %s", methodName)
 	}
 	mux.m[methodName] = handler
 }

@@ -215,6 +215,10 @@ func (c *Client) Send(req *Request) error {
 	return err
 }
 
+func (c *Client) HandleConnectionError(f func(error)) {
+	c.wsClient.OnHandleError = f
+}
+
 func NewClient(config *ClientConfig) *Client {
 	if Verbose {
 		log.Printf("clientConfig: %+v", config)
