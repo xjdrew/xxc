@@ -55,7 +55,7 @@ func (svc *TuringService) handleOneMessage(message *xxc.ChatMessage) {
 	}
 
 	log.Printf("\tquestion: %s", question)
-	id := fmt.Sprintf("%d", svc.user.GetProfile().Id)
+	id := fmt.Sprintf("%d", message.User)
 	tresp, err := svc.tuling.Ask(question, id)
 	if err != nil {
 		log.Printf("\ttuling answer failed: %s", err)
