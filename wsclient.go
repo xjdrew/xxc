@@ -78,6 +78,7 @@ func (ws *wsClient) readMessage() (*Response, error) {
 
 	_, message, err := ws.conn.ReadMessage()
 	if err != nil {
+		ws.conn.Close()
 		return nil, err
 	}
 
@@ -99,6 +100,9 @@ func (ws *wsClient) writeMessage(req *Request) error {
 		return err
 	}
 	err = ws.conn.WriteMessage(websocket.BinaryMessage, data)
+	if err != nil {
+		ws.conn.Close()
+	}
 	return err
 }
 
@@ -135,6 +139,10 @@ func (ws *wsClient) handleMessage() {
 			ws.handler.ServeXX(resp)
 		}
 	}
+}
+
+func (ws *wsClient) Close() {
+	ws.conn.Close()
 }
 
 func (ws *wsClient) Send(req *Request) error {

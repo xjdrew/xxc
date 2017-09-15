@@ -33,6 +33,16 @@ func (u *User) updateUsers(users []*UserProfile) {
 	}
 }
 
+func (u *User) getUsersList() []*UserProfile {
+	u.usersMutex.Lock()
+	defer u.usersMutex.Unlock()
+
+	l := make([]*UserProfile, 0, len(u.users))
+	for _, user := range u.users {
+		l = append(l, user)
+	}
+	return l
+}
 func (u *User) updateGroups(groups []*ChatGroup) {
 	u.groupMutex.Lock()
 	defer u.groupMutex.Unlock()
@@ -140,6 +150,7 @@ func (u *User) OnChatMessage(resp *Response) {
 	} else {
 		log.Printf("OnChatMessage: <%s,%s>", resp.Result, resp.Message)
 	}
+
 }
 
 // 接收新建组信息
@@ -207,6 +218,20 @@ func (u *User) say(gid string, content string) error {
 		Params: params,
 	}
 	return u.Client.Send(messageRequest)
+}
+
+func (u *User) ReloadUserList() []*UserProfile {
+	request := &Request{
+		UserID: u.profile.Id,
+		Module: "chat",
+		Method: "usergetlist",
+	}
+
+	response, err := u.Client.Call(request)
+	if err == nil {
+		u.OnChatUserGetList(response)
+	}
+	return u.getUsersList()
 }
 
 func (u *User) SayToGroup(gid string, content string) error {

@@ -115,7 +115,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("create user failed: %s", err)
 	}
-	defer user.Fini()
+	//defer user.Fini()
 	log.Printf("login as user: %s", user.GetProfile().Account)
 
 	svc := &TuringService{

@@ -164,6 +164,8 @@ func (c *Client) Login() error {
 func (c *Client) Logout() error {
 	c.loginMutex.Lock()
 	defer c.loginMutex.Unlock()
+	defer c.wsClient.Close()
+
 	if c.user == nil {
 		return nil
 	}
