@@ -43,6 +43,10 @@ func (resp *Response) ConvertDataTo(v interface{}) error {
 	return json.Unmarshal(resp.Data, v)
 }
 
+func (resp *Response) Succeed() bool {
+	return resp.Result == "success"
+}
+
 func (resp *Response) String() string {
 	v, err := json.Marshal(resp)
 	if err != nil {

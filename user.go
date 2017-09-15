@@ -133,9 +133,12 @@ func (u *User) OnChatMessage(resp *Response) {
 		return
 	}
 
-	log.Printf("OnChatMessage: <%s,%s>", resp.Result, resp.Message)
-	for _, m := range messages {
-		log.Printf("\tg:%s, u:%d, d:%d, t:%s, ct:%s, c:%s", m.Cgid, m.User, m.Date, m.Type, m.ContentType, m.Content)
+	if resp.Succeed() {
+		for _, m := range messages {
+			log.Printf("OnChatMessage: g<%s>, u<%d>, d<%d>, t<%s>, ct<%s>, c<%s>", m.Cgid, m.User, m.Date, m.Type, m.ContentType, m.Content)
+		}
+	} else {
+		log.Printf("OnChatMessage: <%s,%s>", resp.Result, resp.Message)
 	}
 }
 
@@ -155,6 +158,28 @@ func (u *User) OnChatCreate(resp *Response) {
 // 接收被踢下线通知
 func (u *User) OnChatKickoff(resp *Response) {
 	log.Printf("OnChatKickoff: %s", resp.Message)
+}
+
+// 接收其他用户登录信息
+func (u *User) OnChatLogin(resp *Response) {
+	var user UserProfile
+	err := resp.ConvertDataTo(&user)
+	if err != nil {
+		log.Printf("OnChatLogin failed: %s", err)
+		return
+	}
+	log.Printf("OnChatLogin: %s<%s>", user.Account, user.Realname)
+}
+
+// 接收其他用户登录信息
+func (u *User) OnChatLogout(resp *Response) {
+	var user UserProfile
+	err := resp.ConvertDataTo(&user)
+	if err != nil {
+		log.Printf("OnChatLogout failed: %s", err)
+		return
+	}
+	log.Printf("OnChatLogout: %s<%s>", user.Account, user.Realname)
 }
 
 func (u *User) say(gid string, content string) error {
@@ -242,6 +267,8 @@ func CreateUser(client *Client) (*User, error) {
 	mux.HandleFunc("chat.message", user.OnChatMessage)
 	mux.HandleFunc("chat.create", user.OnChatCreate)
 	mux.HandleFunc("chat.kickoff", user.OnChatKickoff)
+	mux.HandleFunc("chat.login", user.OnChatLogin)
+	mux.HandleFunc("chat.logout", user.OnChatLogout)
 	client.Mux = mux
 
 	profile, err := client.GetUser()

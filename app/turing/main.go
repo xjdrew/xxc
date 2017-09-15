@@ -73,10 +73,13 @@ func (svc *TuringService) OnChatMessage(resp *xxc.Response) {
 		return
 	}
 
-	log.Printf("OnChatMessage: <%s,%s>", resp.Result, resp.Message)
-	for _, m := range messages {
-		log.Printf("\tg:%s, u:%d, d:%d, t:%s, ct:%s, c:%s", m.Cgid, m.User, m.Date, m.Type, m.ContentType, m.Content)
-		svc.handleOneMessage(m)
+	if resp.Succeed() {
+		for _, m := range messages {
+			log.Printf("OnChatMessage: g<%s>, u<%d>, d<%d>, t<%s>, ct<%s>, c<%s>", m.Cgid, m.User, m.Date, m.Type, m.ContentType, m.Content)
+			svc.handleOneMessage(m)
+		}
+	} else {
+		log.Printf("OnChatMessage: <%s,%s>", resp.Result, resp.Message)
 	}
 }
 

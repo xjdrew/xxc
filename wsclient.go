@@ -127,19 +127,23 @@ func (ws *wsClient) handleMessage() {
 		name := resp.MethodName()
 		call := ws.ss.get(name)
 		if call != nil {
+			log.Printf("[response] %s", name)
 			call.resp = resp
 			call.done <- call
 		} else {
+			log.Printf("[notify] %s", name)
 			ws.handler.ServeXX(resp)
 		}
 	}
 }
 
 func (ws *wsClient) Send(req *Request) error {
+	log.Printf("[send] %s", req.MethodName())
 	return ws.writeMessage(req)
 }
 
 func (ws *wsClient) Call(req *Request) (*Response, error) {
+	log.Printf("[call] %s", req.MethodName())
 	name := req.MethodName()
 	c := &call{
 		done: make(chan *call),
