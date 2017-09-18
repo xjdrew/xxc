@@ -60,6 +60,7 @@ func (svc *TuringService) handleOneMessage(message *xxc.ChatMessage) {
 	tresp, err := svc.Tuling.Ask(question, id)
 	if err != nil {
 		log.Printf("\ttuling answer failed: %s", err)
+		return
 	}
 	answer := tresp.String()
 	log.Printf("\ttuling answer: %s", answer)
