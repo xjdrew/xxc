@@ -110,6 +110,15 @@ type ChatGroup struct {
 	Members        []int       // 当前会话中包含的所有用户信息,只需要包含id即可
 }
 
+func (g *ChatGroup) IsInGroup(id int) bool {
+	for _, m := range g.Members {
+		if id == m {
+			return true
+		}
+	}
+	return false
+}
+
 type ChatMessage struct {
 	Id          int    `json:"-"`           // 消息在服务器保存的id
 	Gid         string `json:"gid"`         // 此消息的gid

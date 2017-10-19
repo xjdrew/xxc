@@ -26,8 +26,21 @@ func (svc *TuringService) parseQuestion(user *xxc.User, message *xxc.ChatMessage
 	}
 
 	group := user.GetGroup(message.Cgid)
-	tag := "@" + user.GetProfile().Realname
-	if group != nil && group.Type != "one2one" && strings.Index(message.Content, tag) == -1 {
+	// 加强校验，如果创建组的信息未到达，放弃处理
+	if group == nil {
+		return ""
+	}
+
+	profile := user.GetProfile()
+
+	// 喧喧bug 1: 可能收到其他用户的one2one聊天信息
+	// 喧喧bug 2: 任何人都可以向其他用户的one2one会话里投递信息
+	if !group.IsInGroup(message.User) || !group.IsInGroup(profile.Id) {
+		return ""
+	}
+
+	tag := "@" + profile.Realname
+	if group.Type != "one2one" && strings.Index(message.Content, tag) == -1 {
 		return ""
 	}
 
